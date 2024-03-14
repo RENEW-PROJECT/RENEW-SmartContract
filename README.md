@@ -42,5 +42,5 @@ address,amount
 ### Running file renewToken.ts
 
 ```shell
-$ ts-node interation/renewToken.ts
+$ ts-node interations/renewToken.ts
 ```

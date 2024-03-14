@@ -15,7 +15,7 @@ const contract = new Contract(contractAddress, abi, wallet)
 const BatchTransferFromCSV = async () => {
     const addresses: any[] = []
     const values: any[] = []
-    fs.createReadStream('interation/data.csv')
+    fs.createReadStream('interations/data.csv')
         .pipe(csvParser())
         .on('data', (data: any) => {
             const valueWei = ethers.utils.parseEther(data.amount)
