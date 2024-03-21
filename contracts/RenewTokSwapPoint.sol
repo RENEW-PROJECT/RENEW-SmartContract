@@ -50,7 +50,7 @@ contract RenewTokSwapPoint is Ownable, ReentrancyGuard {
 
     function setSystemFee(uint256 _fee) external onlyOwner {
         require(_fee >= 0, "Invalid value");
-        require(_fee <= 99999, "Maximum value is 99,999%");
+        require(_fee <= 999, "Maximum value is 99,9%");
         systemFee.fee = _fee;
         emit SystemFeeUpdated(_fee);
     }
