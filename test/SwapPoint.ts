@@ -16,7 +16,7 @@ describe("Renew Swap Point Testing", () => {
         token = await Token.connect(owner).deploy('RENEW','RENEW',1000000000, 18, owner.address);
 
         const RenewTokSwapPoint = await ethers.getContractFactory('RenewTokSwapPoint');
-        renewTokSwapPoint = await RenewTokSwapPoint.connect(owner).deploy(token.getAddress(), ratio);
+        renewTokSwapPoint = await RenewTokSwapPoint.connect(owner).deploy(token.getAddress(), ratio, owner);
     });
 
     it('should deploy with correct initial values', async function () {

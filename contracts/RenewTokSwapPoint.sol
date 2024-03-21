@@ -11,6 +11,7 @@ contract RenewTokSwapPoint is Ownable, ReentrancyGuard {
 
     mapping(address => bool) private whitelist;
     mapping(uint256=>bool) convert;
+    address public feeReceiverAccount;
     IERC20 public token;
     uint256 public convertRatio;
     struct LimitConvert{
@@ -28,19 +29,22 @@ contract RenewTokSwapPoint is Ownable, ReentrancyGuard {
     event UserWhiteListed(address indexed user);
     event UserWhitelistRemoved(address indexed user);
     event RedeemPoint(uint256 requestId, address user, uint256 point, uint256 amount, address token);
+    event TransferFee(address _user, uint256 fee);
     event RatioSet(uint256 ratio);
     event MinConvertSet(uint256 minConvert);
     event MaxConvertSet(uint256 maxConvert);
     event SystemFeeUpdated(uint256 fee);
     event ConvertTokenUpdated(address token);
+    event SetFeeReceiverAccount(address feeReceiverAccount);
 
-    constructor(address _token, uint256 _ratio, address _owner) Ownable(_owner) {
+    constructor(address _token, uint256 _ratio, address _owner, address _feeReceiverAccount) Ownable(_owner) {
         token = IERC20(_token);
         convertRatio = _ratio;
         systemFee.fee = 15;
         systemFee.ratio = 1000;
         limitConvert.minConvert = 100;
         limitConvert.maxConvert = 1000000;
+        feeReceiverAccount = _feeReceiverAccount;
     }
 
     modifier onlyOwnerOrWhiteList() {
@@ -53,6 +57,12 @@ contract RenewTokSwapPoint is Ownable, ReentrancyGuard {
         require(_fee <= 999, "Maximum value is 99,9%");
         systemFee.fee = _fee;
         emit SystemFeeUpdated(_fee);
+    }
+
+    function setFeeReceiver(address _feeReceiverAccount) external onlyOwner {
+        require(_feeReceiverAccount != address(0), "Invalid user");
+        feeReceiverAccount = _feeReceiverAccount;
+        emit SetFeeReceiverAccount(_feeReceiverAccount);
     }
 
     function updateWhitelist(address _user, bool _isWhiteList) external onlyOwner {
@@ -85,19 +95,22 @@ contract RenewTokSwapPoint is Ownable, ReentrancyGuard {
         require(address(token) != address(0), "Token is not set");
         require(_point >= limitConvert.minConvert && _point <= limitConvert.maxConvert, "Invalid number of points");
         require(!convert[_id], "Request already converted");
-        uint256 received = convertPoint(_point);
-        require(token.allowance(msg.sender, address(this)) >= received, "Insufficient allowance");
+        (uint256 received, uint256 fee) = convertPoint(_point);
+        require(token.allowance(msg.sender, address(this)) >= received.add(fee), "Insufficient allowance");
         token.transferFrom(msg.sender,_user, received);
-        convert[_id] = true;
         emit RedeemPoint(_id, _user, _point, received, address(token));
+        token.transferFrom(msg.sender, feeReceiverAccount, fee);
+        emit TransferFee(feeReceiverAccount, fee);
+        convert[_id] = true;
+
     }
 
-    function convertPoint(uint256 _point) public view returns (uint256) {
+    function convertPoint(uint256 _point) public view returns (uint256, uint256) {
         require(convertRatio != 0, "Ratio is not set");
         uint256 total = _point.mul(convertRatio);
         uint256 fee = total.mul(systemFee.fee).div(systemFee.ratio);
         uint256 received = total.sub(fee);
-        return received;
+        return (received, fee);
     }
 
     function configRatio(uint256 _ratio) external onlyOwner {
