@@ -56,7 +56,7 @@ contract RenewTokSwapPoint is Ownable, ReentrancyGuard {
         emit SystemFeeUpdated(_fee);
     }
 
-    function whitelist(address _user, bool _isWhiteList) external onlyOwner {
+    function updateWhitelist(address _user, bool _isWhiteList) external onlyOwner {
         require(_user != address(0), "Invalid user");
         if (_isWhiteList == true) {
             require(!whitelist[_user], "User already in whitelist");
